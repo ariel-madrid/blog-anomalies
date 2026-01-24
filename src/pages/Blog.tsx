@@ -146,8 +146,6 @@ const Blog: React.FC = () => {
         }
     };
 
-
-
     const incrementViews = async (postId: string) => {
         const { data: post, error } = await supabase
             .from('blogs')
@@ -162,8 +160,6 @@ const Blog: React.FC = () => {
                 .eq('id', postId);
         }
     };
-
-
 
     const t = {
         ES: {
@@ -546,12 +542,14 @@ const Blog: React.FC = () => {
                                             {selectedPost.gallery_images.slice(0, 5).map((imageUrl, index) => {
                                                 /** POSICIONES FIJAS Y ORDENADAS */
                                                 const POSITIONS = [
-                                                    { x: -260, rotate: -10 },
-                                                    { x: -130, rotate: -5 },
-                                                    { x: 0, rotate: 0 },
-                                                    { x: 130, rotate: 5 },
-                                                    { x: 260, rotate: 10 },
+                                                    { x: '-70%', rotate: -12 },
+                                                    { x: '-40%', rotate: -6 },
+                                                    { x: '0%', rotate: 0 },
+                                                    { x: '40%', rotate: 6 },
+                                                    { x: '70%', rotate: 12 },
                                                 ];
+
+
 
                                                 const { x, rotate } = POSITIONS[index];
 
