@@ -509,10 +509,6 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost, showAllPosts = 
                                             >
                                                 <Share2 size={18} />
                                             </IconButton>
-
-                                            <IconButton size="small" sx={{ color: '#ffd700', border: '1px solid rgba(255, 215, 0, 0.2)' }}>
-                                                <Sparkles size={18} />
-                                            </IconButton>
                                         </Box>
 
 
