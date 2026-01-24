@@ -139,7 +139,15 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost, showAllPosts = 
         if (typeof window !== 'undefined') {
             window.history.pushState({}, '', `/${post.id}`);
         }
+
+        if (isMobile) {
+            setShowContentOnMobile(true); // mostrar contenido al tocar
+        }
+
+        // opcional: incrementar views
+        incrementViews(post.id);
     };
+
 
     const incrementViews = async (postId: string) => {
         const { data: post, error } = await supabase
