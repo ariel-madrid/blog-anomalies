@@ -184,8 +184,10 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost, showAllPosts = 
     }[lang];
 
     const handleShare = () => {
-        const postUrl = window.location.href; // URL actual
-        const postTitle = lang === 'EN' ? selectedPost?.title_en : selectedPost?.title;
+        if (!selectedPost) return; // no hacer nada si no hay post
+
+        const postUrl = window.location.href;
+        const postTitle = lang === 'EN' ? selectedPost.title_en || '' : selectedPost.title || '';
 
         if (navigator.share) {
             navigator.share({
@@ -199,9 +201,10 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost, showAllPosts = 
             const twitter = `https://twitter.com/intent/tweet?text=${encodeURIComponent(postTitle)}&url=${encodeURIComponent(postUrl)}`;
             const whatsapp = `https://api.whatsapp.com/send?text=${encodeURIComponent(postTitle + ' ' + postUrl)}`;
 
-            window.open(facebook, '_blank');
+            window.open(facebook, '_blank'); // aquí podrías abrir un modal en vez de abrir directo
         }
     };
+
 
 
     return (
