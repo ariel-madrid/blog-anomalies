@@ -308,36 +308,93 @@ const Blog: React.FC = () => {
                         ) : (
                             posts.map((post) => (
                                 <motion.div key={post.id} whileHover={{ x: 6 }} onClick={() => handlePostSelect(post)}>
-                                    <Card sx={{
-                                        mb: 2,
-                                        cursor: 'pointer',
-                                        background: selectedPost?.id === post.id ? 'rgba(255, 215, 0, 0.1)' : 'rgba(15, 15, 20, 0.6)',
-                                        border: `1px solid ${selectedPost?.id === post.id ? '#ffd700' : 'rgba(255, 215, 0, 0.15)'}`,
-                                        borderLeft: selectedPost?.id === post.id ? '4px solid #ffd700' : '1px solid rgba(255, 215, 0, 0.15)',
-                                        backdropFilter: 'blur(10px)',
-                                        transition: 'all 0.3s ease'
-                                    }}>
+                                    <Card
+                                        sx={{
+                                            mb: 2,
+                                            cursor: 'pointer',
+                                            background: selectedPost?.id === post.id ? 'rgba(255, 215, 0, 0.1)' : 'rgba(15, 15, 20, 0.6)',
+                                            border: `1px solid ${selectedPost?.id === post.id ? '#ffd700' : 'rgba(255, 215, 0, 0.15)'}`,
+                                            borderLeft: selectedPost?.id === post.id ? '4px solid #ffd700' : '1px solid rgba(255, 215, 0, 0.15)',
+                                            backdropFilter: 'blur(12px)',
+                                            transition: 'all 0.4s ease',
+                                            overflow: 'hidden',
+                                            boxShadow: selectedPost?.id === post.id
+                                                ? '0 0 20px rgba(255, 215, 0, 0.4)'
+                                                : '0 2px 10px rgba(0,0,0,0.3)',
+                                            '&:hover': {
+                                                boxShadow: '0 10px 20px rgba(0, 255, 170, 0.3)',
+                                                borderLeft: '4px solid #00ffaa',
+                                                background: 'rgba(15, 15, 20, 0.75)'
+                                            }
+                                        }}
+                                    >
                                         <CardMedia
                                             component="img"
                                             height="120"
                                             image={post.main_image}
                                             alt={lang === 'EN' ? post.title_en : post.title}
-                                            sx={{ opacity: selectedPost?.id === post.id ? 1 : 0.5 }}
+                                            sx={{
+                                                opacity: selectedPost?.id === post.id ? 1 : 0.6,
+                                                transition: 'opacity 0.3s ease, transform 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'scale(1.05)',
+                                                    opacity: 1
+                                                }
+                                            }}
                                         />
                                         <CardContent sx={{ p: 2 }}>
-                                            <Typography variant="h6" sx={{ color: '#ffd700', fontWeight: 700, mb: 1, fontFamily: 'Cinzel, serif', fontSize: '1rem' }}>
+                                            <Typography
+                                                variant="h6"
+                                                sx={{
+                                                    color: '#ffd700',
+                                                    fontWeight: 700,
+                                                    mb: 1,
+                                                    fontFamily: 'Cinzel, serif',
+                                                    fontSize: '1rem',
+                                                    lineHeight: 1.2
+                                                }}
+                                            >
                                                 {lang === 'EN' ? post.title_en : post.title}
                                             </Typography>
-                                            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mb: 2, lineClamp: 2, display: '-webkit-box', overflow: 'hidden', WebkitBoxOrient: 'vertical', fontFamily: 'Crimson Text', fontSize: '0.95rem' }}>
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    color: 'rgba(255,255,255,0.7)',
+                                                    mb: 2,
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 2,
+                                                    overflow: 'hidden',
+                                                    WebkitBoxOrient: 'vertical',
+                                                    fontFamily: 'Crimson Text, serif',
+                                                    fontSize: '0.95rem'
+                                                }}
+                                            >
                                                 {lang === 'EN' ? post.summary_en : post.summary}
                                             </Typography>
                                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                 {post.tags.slice(0, 3).map(tag => (
-                                                    <Chip key={tag} label={tag} size="small" sx={{ bgcolor: 'rgba(0, 255, 170, 0.05)', color: '#00ffaa', border: '1px solid rgba(0, 255, 170, 0.2)', fontSize: '0.65rem', height: '18px' }} />
+                                                    <Chip
+                                                        key={tag}
+                                                        label={tag}
+                                                        size="small"
+                                                        sx={{
+                                                            bgcolor: 'rgba(0, 255, 170, 0.08)',
+                                                            color: '#00ffaa',
+                                                            border: '1px solid rgba(0, 255, 170, 0.25)',
+                                                            fontSize: '0.65rem',
+                                                            height: '20px',
+                                                            transition: 'all 0.3s ease',
+                                                            '&:hover': {
+                                                                bgcolor: 'rgba(0, 255, 170, 0.15)',
+                                                                borderColor: '#00ffaa'
+                                                            }
+                                                        }}
+                                                    />
                                                 ))}
                                             </Box>
                                         </CardContent>
                                     </Card>
+
                                 </motion.div>
                             ))
                         )}
