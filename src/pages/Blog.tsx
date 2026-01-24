@@ -542,11 +542,11 @@ const Blog: React.FC = () => {
                                             {selectedPost.gallery_images.slice(0, 5).map((imageUrl, index) => {
                                                 /** POSICIONES FIJAS Y ORDENADAS */
                                                 const POSITIONS = [
-                                                    { x: '-70%', rotate: -12 },
-                                                    { x: '-40%', rotate: -6 },
+                                                    { x: '-90%', rotate: -18 },
+                                                    { x: '-60%', rotate: -12 },
                                                     { x: '0%', rotate: 0 },
-                                                    { x: '40%', rotate: 6 },
-                                                    { x: '70%', rotate: 12 },
+                                                    { x: '60%', rotate: 12 },
+                                                    { x: '90%', rotate: 18 },
                                                 ];
 
 
