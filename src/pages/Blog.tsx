@@ -132,11 +132,38 @@ const Blog: React.FC = () => {
 
     const handlePostSelect = (post: BlogPost) => {
         setSelectedPost(post);
+
+        const viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '[]');
+        if (!viewedPosts.includes(post.id)) {
+            incrementViews(post.id);
+            viewedPosts.push(post.id);
+            localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
+        }
+
         if (isMobile) {
             setShowContentOnMobile(true);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
+
+
+
+    const incrementViews = async (postId: string) => {
+        const { data: post, error } = await supabase
+            .from('blogs')
+            .select('views')
+            .eq('id', postId)
+            .single();
+
+        if (!error && post) {
+            await supabase
+                .from('blogs')
+                .update({ views: post.views + 1 })
+                .eq('id', postId);
+        }
+    };
+
+
 
     const t = {
         ES: {
@@ -144,10 +171,10 @@ const Blog: React.FC = () => {
             footer: 'STREAM DE DATOS TERMINADO | LA VERDAD ESTÁ AHÍ FUERA',
             select: 'SELECCIONA UNA FRECUENCIA',
             back: 'Volver a la lista',
-            comments: 'REGISTROS DE TRANSMISIÓN',
+            comments: 'SECCIÓN DE COMENTARIOS',
             commentLabel: 'Tu Identidad (Apodo)',
-            contentLabel: 'Mensaje Interceptado',
-            submit: 'Transmitir Datos',
+            contentLabel: 'Tu Comentario',
+            submit: 'Enviar',
             noComments: 'No se han interceptado señales aún...',
             announcement: 'Blog nuevo todas las semanas — no olvides dejar tu comentario 🛸'
         },
@@ -156,10 +183,10 @@ const Blog: React.FC = () => {
             footer: 'DATA STREAM TERMINATED | THE TRUTH IS OUT THERE',
             select: 'SELECT A FREQUENCY',
             back: 'Back to list',
-            comments: 'TRANSMISSION LOGS',
+            comments: 'COMMENT SECTION',
             commentLabel: 'Your Identity (Alias)',
-            contentLabel: 'Intercepted Message',
-            submit: 'Transmit Data',
+            contentLabel: 'Your Comment',
+            submit: 'Send',
             noComments: 'No signals intercepted yet...',
             announcement: 'Blog new every week — don\'t forget to leave your comment 🛸'
         }
@@ -391,6 +418,13 @@ const Blog: React.FC = () => {
                                                         }}
                                                     />
                                                 ))}
+                                            </Box>
+
+                                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mt: 1, gap: 0.5 }}>
+                                                <Eye size={16} color="#00ffaa" />
+                                                <Typography variant="caption" sx={{ color: 'rgba(0, 255, 170, 0.7)', fontSize: '0.7rem' }}>
+                                                    {post.views || 0}
+                                                </Typography>
                                             </Box>
                                         </CardContent>
                                     </Card>

@@ -10,6 +10,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type BlogPost = {
+    views: number;
     id: string;
     title: string;
     title_en: string;
