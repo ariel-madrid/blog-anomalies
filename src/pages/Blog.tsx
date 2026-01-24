@@ -3,6 +3,7 @@ import { Box, Container, Typography, Card, CardContent, CardMedia, Chip, IconBut
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, BlogPost, BlogComment } from '../lib/supabase';
 import { Sparkles, Eye, Hexagon, ScrollText, ArrowLeft, MessageSquare, Send, User, Share2 } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
 
 interface BlogProps {
     selectedPost?: BlogPost | null;
@@ -68,6 +69,10 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost, showAllPosts = 
     const [newCommentContent, setNewCommentContent] = useState('');
     const [submittingComment, setSubmittingComment] = useState(false);
 
+    const { id } = useParams<{ id: string }>(); // extrae id desde la URL
+    const navigate = useNavigate(); // para redirección si id no existe
+
+
     useEffect(() => {
         fetchPosts();
         const handleLang = (e: any) => setLang(e.detail);
@@ -93,9 +98,22 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost, showAllPosts = 
                 console.error('Error fetching posts:', error);
             } else {
                 setPosts(data || []);
-                if (data && data.length > 0 && !isMobile && !selectedPost) {
-                    setSelectedPost(data[0]);
+                if (data && data.length > 0) {
+                    if (id) {
+                        // buscar post por ID de URL
+                        const postById = data.find(p => p.id === id);
+                        if (postById) {
+                            setSelectedPost(postById);
+                        } else {
+                            // redirigir al listado general si id no existe
+                            navigate('/blog');
+                        }
+                    } else if (!selectedPost) {
+                        // fallback: primer post
+                        setSelectedPost(data[0]);
+                    }
                 }
+
             }
         } catch (err) {
             console.error('Fatal connection error:', err);
