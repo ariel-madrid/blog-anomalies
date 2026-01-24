@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Box, Container, Typography, Card, CardContent, CardMedia, Chip, IconButton, Skeleton, useMediaQuery, useTheme, Button, TextField, Divider, Grid } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, BlogPost, BlogComment } from '../lib/supabase';
-import { Sparkles, Eye, Ghost, Hexagon, ScrollText, Calendar, Rocket, ArrowLeft, MessageSquare, Send, User } from 'lucide-react';
-import { Globe } from 'lucide-react';
+import { Sparkles, Eye, Hexagon, ScrollText, ArrowLeft, MessageSquare, Send, User } from 'lucide-react';
+
 
 const Ufo = () => (
     <motion.div
@@ -216,47 +216,40 @@ const Blog: React.FC = () => {
                     backdropFilter: 'blur(6px)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center', // centra todo horizontalmente
+                    justifyContent: 'space-between', // espacio entre texto y botón
                 }}
             >
-                {/* Texto centrado */}
-                <Typography
-                    variant="body2"
-                    sx={{
-                        fontWeight: 700,
-                        fontSize: { xs: '0.7rem', sm: '0.85rem' },
-                        letterSpacing: 1,
-                        opacity: 0.9,
-                        position: 'absolute', // lo sacamos del flujo para que quede centrado
-                        left: '50%',
-                        transform: 'translateX(-50%)', // centrado exacto
-                        whiteSpace: 'nowrap',
-                    }}
-                >
-                    {t.announcement}
-                </Typography>
-
-                {/* Botón a la derecha */}
-                <Box sx={{ marginLeft: 'auto' }}>
-                    <IconButton
-                        onClick={() => setLang(lang === 'ES' ? 'EN' : 'ES')}
-                        size="small"
+                <Box sx={{ flex: 1, textAlign: 'center' }}>
+                    <Typography
+                        variant="body2"
                         sx={{
-                            color: '#00ffaa',
-                            border: '1px solid rgba(0,255,170,0.4)',
-                            borderRadius: '4px',
-                            fontFamily: "'Courier New', monospace",
-                            fontSize: '0.65rem',
-                            letterSpacing: 1.5,
-                            px: 1,
-                            '&:hover': {
-                                bgcolor: 'rgba(0,255,170,0.1)',
-                            },
+                            fontWeight: 700,
+                            fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                            letterSpacing: 1,
+                            opacity: 0.9,
+                            whiteSpace: 'nowrap',
                         }}
                     >
-                        {lang === 'ES' ? 'ES-01' : 'EN-01'}
-                    </IconButton>
+                        {t.announcement}
+                    </Typography>
                 </Box>
+
+                <IconButton
+                    onClick={() => setLang(lang === 'ES' ? 'EN' : 'ES')}
+                    size="small"
+                    sx={{
+                        color: '#00ffaa',
+                        border: '1px solid rgba(0,255,170,0.4)',
+                        borderRadius: '4px',
+                        fontFamily: "'Courier New', monospace",
+                        fontSize: '0.65rem',
+                        letterSpacing: 1.5,
+                        px: 1,
+                        '&:hover': { bgcolor: 'rgba(0,255,170,0.1)' },
+                    }}
+                >
+                    {lang === 'ES' ? 'ES-01' : 'EN-01'}
+                </IconButton>
             </Box>
 
 
@@ -548,8 +541,6 @@ const Blog: React.FC = () => {
                                                     { x: '60%', rotate: 12 },
                                                     { x: '90%', rotate: 18 },
                                                 ];
-
-
 
                                                 const { x, rotate } = POSITIONS[index];
 
