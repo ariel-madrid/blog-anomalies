@@ -215,25 +215,27 @@ const Blog: React.FC = () => {
                     borderBottom: '1px solid rgba(255,255,255,0.1)',
                     backdropFilter: 'blur(6px)',
                     display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' }, // columna en móviles
                     alignItems: 'center',
-                    justifyContent: 'space-between', // espacio entre texto y botón
+                    justifyContent: 'center',
                 }}
             >
-                <Box sx={{ flex: 1, textAlign: 'center' }}>
-                    <Typography
-                        variant="body2"
-                        sx={{
-                            fontWeight: 700,
-                            fontSize: { xs: '0.7rem', sm: '0.85rem' },
-                            letterSpacing: 1,
-                            opacity: 0.9,
-                            whiteSpace: 'nowrap',
-                        }}
-                    >
-                        {t.announcement}
-                    </Typography>
-                </Box>
+                {/* Texto centrado */}
+                <Typography
+                    variant="body2"
+                    sx={{
+                        fontWeight: 700,
+                        fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                        letterSpacing: 1,
+                        opacity: 0.9,
+                        textAlign: 'center',
+                        mb: { xs: 0.5, sm: 0 }, // pequeño margen debajo en móvil
+                    }}
+                >
+                    {t.announcement}
+                </Typography>
 
+                {/* Botón a la derecha en desktop, debajo en móvil */}
                 <IconButton
                     onClick={() => setLang(lang === 'ES' ? 'EN' : 'ES')}
                     size="small"
@@ -245,7 +247,11 @@ const Blog: React.FC = () => {
                         fontSize: '0.65rem',
                         letterSpacing: 1.5,
                         px: 1,
-                        '&:hover': { bgcolor: 'rgba(0,255,170,0.1)' },
+                        ml: { xs: 0, sm: 1 }, // margen a la izquierda solo en desktop
+                        mt: { xs: 0.5, sm: 0 }, // margen arriba solo en móvil
+                        '&:hover': {
+                            bgcolor: 'rgba(0,255,170,0.1)',
+                        },
                     }}
                 >
                     {lang === 'ES' ? 'ES-01' : 'EN-01'}
