@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Box, Container, Typography, Card, CardContent, CardMedia, Chip, IconButton, Skeleton, useMediaQuery, useTheme, Button, TextField, Divider, Grid } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, BlogPost, BlogComment } from '../lib/supabase';
-import { Sparkles, Eye, Hexagon, ScrollText, ArrowLeft, MessageSquare, Send, User } from 'lucide-react';
+import { Sparkles, Eye, Hexagon, ScrollText, ArrowLeft, MessageSquare, Send, User, Share2 } from 'lucide-react';
 
+interface BlogProps {
+    selectedPost?: BlogPost | null;
+    showAllPosts?: boolean;
+}
 
 const Ufo = () => (
     <motion.div
@@ -49,11 +53,11 @@ const Ufo = () => (
     </motion.div>
 );
 
-const Blog: React.FC = () => {
+const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost, showAllPosts = true }) => {
+    const [selectedPost, setSelectedPost] = useState<BlogPost | null>(externalPost || null);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [posts, setPosts] = useState<BlogPost[]>([]);
-    const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
     const [loading, setLoading] = useState(true);
     const [lang, setLang] = useState<'ES' | 'EN'>(() => (localStorage.getItem('app_lang') as 'ES' | 'EN') || 'ES');
     const [showContentOnMobile, setShowContentOnMobile] = useState(false);
@@ -132,17 +136,8 @@ const Blog: React.FC = () => {
 
     const handlePostSelect = (post: BlogPost) => {
         setSelectedPost(post);
-
-        const viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '[]');
-        if (!viewedPosts.includes(post.id)) {
-            incrementViews(post.id);
-            viewedPosts.push(post.id);
-            localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
-        }
-
-        if (isMobile) {
-            setShowContentOnMobile(true);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (typeof window !== 'undefined') {
+            window.history.pushState({}, '', `/${post.id}`);
         }
     };
 
@@ -187,6 +182,27 @@ const Blog: React.FC = () => {
             announcement: 'Blog new every week — don\'t forget to leave your comment 🛸'
         }
     }[lang];
+
+    const handleShare = () => {
+        const postUrl = window.location.href; // URL actual
+        const postTitle = lang === 'EN' ? selectedPost?.title_en : selectedPost?.title;
+
+        if (navigator.share) {
+            navigator.share({
+                title: postTitle,
+                url: postUrl,
+            })
+                .then(() => console.log('Compartido exitosamente'))
+                .catch((err) => console.error('Error compartiendo:', err));
+        } else {
+            const facebook = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
+            const twitter = `https://twitter.com/intent/tweet?text=${encodeURIComponent(postTitle)}&url=${encodeURIComponent(postUrl)}`;
+            const whatsapp = `https://api.whatsapp.com/send?text=${encodeURIComponent(postTitle + ' ' + postUrl)}`;
+
+            window.open(facebook, '_blank');
+        }
+    };
+
 
     return (
         <Box sx={{
@@ -473,9 +489,22 @@ const Blog: React.FC = () => {
                                                 </Typography>
                                             </Box>
                                         </Box>
-                                        <IconButton size="small" sx={{ color: '#ffd700', border: '1px solid rgba(255, 215, 0, 0.2)' }}>
-                                            <Sparkles size={18} />
-                                        </IconButton>
+                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                            <IconButton
+                                                size="small"
+                                                sx={{ color: '#00ffaa', border: '1px solid rgba(0,255,170,0.4)' }}
+                                                onClick={handleShare}
+                                                title="Compartir este blog"
+                                            >
+                                                <Share2 size={18} />
+                                            </IconButton>
+
+                                            <IconButton size="small" sx={{ color: '#ffd700', border: '1px solid rgba(255, 215, 0, 0.2)' }}>
+                                                <Sparkles size={18} />
+                                            </IconButton>
+                                        </Box>
+
+
                                     </Box>
 
                                     {/* Image */}
