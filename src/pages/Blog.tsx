@@ -14,7 +14,7 @@ const Ufo = () => (
     <motion.div
         animate={{
             x: ['0vw', '40vw', '-40vw', '15vw', '-15vw', '0vw'], // desplazamiento relativo al centro
-            y: [0, -20, 15, -30, 25, 0],
+            y: [-100, -120],
             rotate: [0, 5, -5, 10, -10, 0]
         }}
         transition={{
@@ -321,25 +321,59 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost, showAllPosts = 
             <Ufo />
             <Ufo />
 
-            <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1, pb: 4 }}>
-                {/* Centered Title */}
+            <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1, pb: 12 }}>
+                {/* HERO / COVER SECTION */}
+                <Box
+                    sx={{
+                        position: 'relative',
+                        width: '100%',
+                        height: { xs: '220px', md: '360px' },
+                        mb: { xs: 4, md: 6 },
+                        borderRadius: 3,
+                        overflow: 'hidden',
+                        border: '1px solid rgba(255,215,0,0.15)',
+                        boxShadow: '0 0 40px rgba(0,0,0,0.6)',
+                        backgroundImage: `
+                        linear-gradient(
+                            rgba(5,5,5,0.55),
+                            rgba(5,5,5,0.85)
+                        ),
+                        url('/images/anomaly-cover.jpeg')
+                        `,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center top',
+                        backgroundRepeat: 'no-repeat',
+                    }}
+                >
+                    {/* Subtle animated glow */}
+                    <motion.div
+                        initial={{ opacity: 0.4 }}
+                        animate={{ opacity: [0.35, 0.55, 0.35] }}
+                        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background:
+                                'radial-gradient(circle at 50% 40%, rgba(0,255,170,0.12), transparent 70%)',
+                            pointerEvents: 'none',
+                        }}
+                    />
 
-                <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 5 } }}>
-                    <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
-                        <Typography variant="h1" sx={{
-                            fontFamily: 'Cinzel, serif',
-                            color: '#ffd700',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 2,
-                            letterSpacing: { xs: 3, md: 6 },
-                            textShadow: '0 0 20px rgba(255, 215, 0, 0.4)',
-                            fontSize: { xs: '2rem', md: '2.8rem' }
-                        }}>
-                            {t.title}
-                        </Typography>
-                    </motion.div>
+                    {/* Scanline overlay */}
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            inset: 0,
+                            background:
+                                'linear-gradient(rgba(255,255,255,0.03) 50%, rgba(0,0,0,0.03) 50%)',
+                            backgroundSize: '100% 2px',
+                            opacity: 0.25,
+                            pointerEvents: 'none',
+                        }}
+                    />
                 </Box>
+
+                {/* Centered Title */}
 
                 {/* Mobile Back Button */}
                 {isMobile && showContentOnMobile && (
