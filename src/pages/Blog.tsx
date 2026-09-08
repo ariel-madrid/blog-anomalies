@@ -223,7 +223,7 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost }) => {
             contentLabel: 'Tu mensaje',
             submit: 'Transmitir',
             noComments: 'Aún no se interceptan señales...',
-            announcement: 'Nuevo avistamiento cada semana — no olvides dejar tu señal',
+            announcement: 'Nuevo avistamiento cada semana',
             channel: 'CANAL',
             evidence: 'EVIDENCIA',
         },
@@ -236,7 +236,7 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost }) => {
             contentLabel: 'Your message',
             submit: 'Transmit',
             noComments: 'No signals intercepted yet...',
-            announcement: 'New sighting every week — don\'t forget to leave your signal',
+            announcement: 'New sighting every week',
             channel: 'CHANNEL',
             evidence: 'EVIDENCE',
         }
@@ -266,21 +266,22 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost }) => {
         }}>
             {/* Top announcement / control bar */}
             <Box sx={{
-                position: 'fixed', top: 0, left: 0, width: '100%', py: 1, px: 2, zIndex: 1300,
-                borderBottom: `1px solid ${ufo.line}`,
-                background: 'rgba(10,12,19,0.82)', backdropFilter: 'blur(8px)',
-                display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', justifyContent: 'center', gap: 1,
+                position: 'fixed', top: 0, left: 0, width: '100%', py: 1, pl: 2, pr: 8, zIndex: 1300,
+                minHeight: 48, borderBottom: `1px solid ${ufo.line}`,
+                background: 'rgba(10,12,19,0.85)', backdropFilter: 'blur(8px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1,
             }}>
-                <Radio size={16} color={ufo.teal} />
-                <Typography variant="body2" sx={{ ...monoLabel, fontWeight: 700, fontSize: { xs: '0.65rem', sm: '0.78rem' }, opacity: 0.9, textAlign: 'center' }}>
+                <Radio size={15} color={ufo.teal} style={{ flexShrink: 0 }} />
+                <Typography variant="body2" sx={{ ...monoLabel, fontWeight: 700, fontSize: { xs: '0.62rem', sm: '0.78rem' }, opacity: 0.9, textAlign: 'center', lineHeight: 1.3 }}>
                     {t.announcement} <span style={{ color: ufo.amber }}>🛸</span>
                 </Typography>
                 <IconButton
                     onClick={() => setLang(lang === 'ES' ? 'EN' : 'ES')}
                     size="small"
                     sx={{
+                        position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
                         color: ufo.teal, border: `1px solid ${ufo.lineTeal}`, borderRadius: '3px',
-                        ...monoLabel, fontSize: '0.62rem', px: 1, ml: { xs: 0, sm: 1 },
+                        ...monoLabel, fontSize: '0.6rem', px: 0.8,
                         '&:hover': { bgcolor: 'rgba(53,224,208,0.1)' },
                     }}
                 >
@@ -303,14 +304,15 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost }) => {
             <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1, pb: 12 }}>
                 {/* HERO / COVER */}
                 <Box className="halftone" sx={{
-                    position: 'relative', width: '100%', height: { xs: '240px', md: '380px' },
+                    position: 'relative', width: '100%', height: { xs: '300px', md: '380px' },
                     mb: { xs: 4, md: 6 }, borderRadius: 2, overflow: 'hidden',
                     border: `1px solid ${ufo.line}`, boxShadow: '0 0 50px rgba(0,0,0,0.7)',
                     background: `
                         radial-gradient(ellipse at 50% 120%, rgba(53,224,208,0.18) 0%, transparent 55%),
                         radial-gradient(ellipse at 50% 30%, rgba(255,182,39,0.12) 0%, transparent 60%),
                         linear-gradient(180deg, #0d1120 0%, #0A0C13 100%)`,
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    justifyContent: { xs: 'flex-start', md: 'center' }, pt: { xs: 4, md: 0 },
                 }}>
                     {/* horizon grid */}
                     <Box sx={{
@@ -357,10 +359,11 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost }) => {
                     </Box>
 
                     {/* Waving grey alien */}
-                    <Box sx={{ position: 'absolute', right: { xs: 8, md: 28 }, bottom: 0, zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ position: 'absolute', right: { xs: 4, md: 28 }, bottom: 0, zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
                         <motion.div
                             animate={{ opacity: [0, 1, 1, 0], scale: [0.8, 1, 1, 0.8] }}
                             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', times: [0, 0.15, 0.85, 1] }}
+                            style={{ display: isMobile ? 'none' : 'block' }}
                         >
                             <Box sx={{
                                 position: 'relative', px: 1.5, py: 0.5, borderRadius: 1, bgcolor: ufo.amber, color: '#0A0C13',
