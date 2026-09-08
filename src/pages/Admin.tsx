@@ -1,56 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Box,
-    Container,
-    Typography,
-    TextField,
-    Button,
-    Paper,
-    Grid,
-    Card,
-    CardContent,
-    IconButton,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Chip,
-    Divider,
-    List,
-    ListItem,
-    ListItemText,
-    ListItemSecondaryAction,
-    Tooltip
+    Box, Container, Typography, TextField, Button, Paper, Grid, Card, CardContent, CardMedia,
+    IconButton, Dialog, DialogContent, Chip, Divider, List, ListItem, ListItemText,
+    ListItemSecondaryAction, Tooltip, Tabs, Tab, InputAdornment, CircularProgress, LinearProgress,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { supabase, BlogPost, BlogComment } from '../lib/supabase';
-import { Lock, Plus, Edit, Trash2, LogOut, Save, Image as ImageIcon, Languages, MessageSquare, User, X } from 'lucide-react';
+import {
+    Lock, Plus, Edit, Trash2, LogOut, Save, Image as ImageIcon, MessageSquare, User, X,
+    Radar, Eye, Copy, UploadCloud, Link as LinkIcon, Radio, ArrowLeft, Tag as TagIcon,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ufo } from '../theme';
 
 const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || 'admin';
 const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS || 'pass';
+
+const mono = { fontFamily: '"Space Mono", monospace', letterSpacing: '0.1em' };
+const wordCount = (s?: string) => (s || '').trim() ? (s || '').trim().split(/\s+/).length : 0;
 
 const Admin: React.FC = () => {
     const navigate = useNavigate();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [loginData, setLoginData] = useState({ username: '', password: '' });
+    const [loginError, setLoginError] = useState(false);
     const [posts, setPosts] = useState<BlogPost[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Editor State
+    // Editor
     const [openDialog, setOpenDialog] = useState(false);
     const [editingPost, setEditingPost] = useState<Partial<BlogPost> | null>(null);
     const [newTag, setNewTag] = useState('');
-    const [uploadingImages, setUploadingImages] = useState(false);
+    const [tab, setTab] = useState(0);
+    const [uploadingGallery, setUploadingGallery] = useState(false);
+    const [uploadingCover, setUploadingCover] = useState(false);
+    const [saving, setSaving] = useState(false);
 
-    // Comments State
+    // Comments
     const [openCommentsDialog, setOpenCommentsDialog] = useState(false);
     const [selectedPostComments, setSelectedPostComments] = useState<BlogComment[]>([]);
     const [currentPostId, setCurrentPostId] = useState<string | null>(null);
 
     useEffect(() => {
-        const auth = localStorage.getItem('admin_auth');
-        if (auth === 'true') {
+        if (localStorage.getItem('admin_auth') === 'true') {
             setIsLoggedIn(true);
             fetchPosts();
         }
@@ -58,29 +50,20 @@ const Admin: React.FC = () => {
 
     const fetchPosts = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('blogs')
-            .select('*')
-            .order('created_at', { ascending: false });
-
+        const { data, error } = await supabase.from('blogs').select('*').order('created_at', { ascending: false });
         if (error) console.error('Error fetching posts:', error);
         else setPosts(data || []);
         setLoading(false);
     };
 
     const fetchComments = async (postId: string) => {
-        const { data, error } = await supabase
-            .from('blog_comments')
-            .select('*')
-            .eq('post_id', postId)
-            .order('created_at', { ascending: false });
-
-        if (error) console.error('Error fetching comments:', error);
+        const { data, error } = await supabase.from('blog_comments').select('*').eq('post_id', postId).order('created_at', { ascending: false });
+        if (error) console.error(error);
         else setSelectedPostComments(data || []);
     };
 
     const handleDeleteComment = async (commentId: string) => {
-        if (window.confirm('Erase this transmission signal permanently?')) {
+        if (window.confirm('¿Borrar esta señal de transmisión permanentemente?')) {
             const { error } = await supabase.from('blog_comments').delete().eq('id', commentId);
             if (error) alert('Error: ' + error.message);
             else if (currentPostId) fetchComments(currentPostId);
@@ -91,10 +74,11 @@ const Admin: React.FC = () => {
         e.preventDefault();
         if (loginData.username === ADMIN_USER && loginData.password === ADMIN_PASS) {
             setIsLoggedIn(true);
+            setLoginError(false);
             localStorage.setItem('admin_auth', 'true');
             fetchPosts();
         } else {
-            alert('Invalid credentials, seeker of truth.');
+            setLoginError(true);
         }
     };
 
@@ -105,43 +89,27 @@ const Admin: React.FC = () => {
 
     const handleSavePost = async () => {
         if (!editingPost?.title || !editingPost?.content) {
-            alert('At least Spanish content is required.');
+            setTab(0);
+            alert('Se requiere al menos título y contenido en español.');
             return;
         }
-
-        // Clean object to avoid sending primary keys or protected fields in the UPDATE body
-        const { id, created_at, ...updateData } = editingPost as any;
-
-        const postToSave = {
-            ...updateData,
-            author: ADMIN_USER,
-            tags: editingPost.tags || []
-        };
+        setSaving(true);
+        const { id, created_at, views, ...updateData } = editingPost as any;
+        const postToSave = { ...updateData, author: ADMIN_USER, tags: editingPost.tags || [] };
 
         let error;
         if (id) {
-            const { error: err } = await supabase
-                .from('blogs')
-                .update(postToSave)
-                .eq('id', id);
-            error = err;
+            ({ error } = await supabase.from('blogs').update(postToSave).eq('id', id));
         } else {
-            const { error: err } = await supabase
-                .from('blogs')
-                .insert([postToSave]);
-            error = err;
+            ({ error } = await supabase.from('blogs').insert([postToSave]));
         }
-
-        if (error) {
-            alert('System failure during transmission: ' + error.message);
-        } else {
-            setOpenDialog(false);
-            fetchPosts();
-        }
+        setSaving(false);
+        if (error) alert('Fallo en la transmisión: ' + error.message);
+        else { setOpenDialog(false); fetchPosts(); }
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm('Are you sure you want to erase this knowledge?')) {
+        if (window.confirm('¿Seguro que deseas borrar este registro?')) {
             const { error } = await supabase.from('blogs').delete().eq('id', id);
             if (error) alert('Error: ' + error.message);
             else fetchPosts();
@@ -149,17 +117,8 @@ const Admin: React.FC = () => {
     };
 
     const openEditor = (post: BlogPost | null = null) => {
-        setEditingPost(post || {
-            title: '',
-            title_en: '',
-            summary: '',
-            summary_en: '',
-            content: '',
-            content_en: '',
-            main_image: '',
-            gallery_images: [],
-            tags: []
-        });
+        setEditingPost(post || { title: '', title_en: '', summary: '', summary_en: '', content: '', content_en: '', main_image: '', gallery_images: [], tags: [] });
+        setTab(0);
         setOpenDialog(true);
     };
 
@@ -170,376 +129,347 @@ const Admin: React.FC = () => {
     };
 
     const addTag = () => {
-        if (newTag && editingPost && !editingPost.tags?.includes(newTag)) {
-            setEditingPost({ ...editingPost, tags: [...(editingPost.tags || []), newTag] });
+        const clean = newTag.trim();
+        if (clean && editingPost && !editingPost.tags?.includes(clean)) {
+            setEditingPost({ ...editingPost, tags: [...(editingPost.tags || []), clean] });
             setNewTag('');
         }
     };
 
-    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (!files || files.length === 0) return;
-
-        setUploadingImages(true);
-        const uploadedUrls: string[] = [];
-
-        try {
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const fileExt = file.name.split('.').pop();
-                const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-                const filePath = `blog-gallery/${fileName}`;
-
-                const { data, error } = await supabase.storage
-                    .from('blog-images')
-                    .upload(filePath, file);
-
-                if (error) {
-                    console.error('Upload error:', error);
-                    alert(`Error uploading ${file.name}: ${error.message}`);
-                } else {
-                    // Get public URL
-                    const { data: { publicUrl } } = supabase.storage
-                        .from('blog-images')
-                        .getPublicUrl(filePath);
-
-                    uploadedUrls.push(publicUrl);
-                }
-            }
-
-            // Add uploaded URLs to gallery_images
-            setEditingPost({
-                ...editingPost,
-                gallery_images: [...(editingPost?.gallery_images || []), ...uploadedUrls]
-            });
-
-        } catch (err) {
-            console.error('Fatal upload error:', err);
-            alert('Error uploading images');
-        } finally {
-            setUploadingImages(false);
+    // Generic uploader → returns public URLs
+    const uploadFiles = async (files: FileList): Promise<string[]> => {
+        const urls: string[] = [];
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const ext = file.name.split('.').pop();
+            const path = `blog-gallery/${Math.random().toString(36).substring(2)}-${Date.now()}.${ext}`;
+            const { error } = await supabase.storage.from('blog-images').upload(path, file);
+            if (error) { alert(`Error subiendo ${file.name}: ${error.message}`); continue; }
+            const { data: { publicUrl } } = supabase.storage.from('blog-images').getPublicUrl(path);
+            urls.push(publicUrl);
         }
+        return urls;
+    };
+
+    const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        setUploadingGallery(true);
+        const urls = await uploadFiles(files);
+        setEditingPost(p => ({ ...p, gallery_images: [...(p?.gallery_images || []), ...urls] }));
+        setUploadingGallery(false);
+        e.target.value = '';
+    };
+
+    const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        setUploadingCover(true);
+        const urls = await uploadFiles(files);
+        if (urls[0]) setEditingPost(p => ({ ...p, main_image: urls[0] }));
+        setUploadingCover(false);
+        e.target.value = '';
     };
 
     const removeGalleryImage = (index: number) => {
-        const newGallery = [...(editingPost?.gallery_images || [])];
-        newGallery.splice(index, 1);
-        setEditingPost({ ...editingPost, gallery_images: newGallery });
+        const g = [...(editingPost?.gallery_images || [])];
+        g.splice(index, 1);
+        setEditingPost({ ...editingPost, gallery_images: g });
     };
 
+    const copyEsToEn = () => {
+        if (!editingPost) return;
+        setEditingPost({
+            ...editingPost,
+            title_en: editingPost.title || '',
+            summary_en: editingPost.summary || '',
+            content_en: editingPost.content || '',
+        });
+    };
+
+    // ---------- LOGIN ----------
     if (!isLoggedIn) {
         return (
-            <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505' }}>
+            <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
+                <div className="crt-scanlines" />
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                    <Paper className="glass-card" sx={{ p: 6, width: 400, textAlign: 'center' }}>
-                        <Lock size={48} color="#ffd700" style={{ marginBottom: '24px' }} />
-                        <Typography variant="h5" sx={{ mb: 4, color: '#ffd700', fontFamily: 'Cinzel' }}>
-                            Sanctum Access
+                    <Paper sx={{ p: { xs: 4, sm: 6 }, width: 400, maxWidth: '100%', textAlign: 'center', border: `1px solid ${ufo.line}` }}>
+                        <Box sx={{ display: 'inline-flex', p: 2, borderRadius: '50%', border: `1px solid ${ufo.line}`, mb: 2, boxShadow: '0 0 24px rgba(255,182,39,0.25)' }}>
+                            <Lock size={36} color={ufo.amber} />
+                        </Box>
+                        <Typography sx={{ ...mono, color: ufo.teal, fontSize: '0.7rem', mb: 0.5 }}>ACCESO RESTRINGIDO</Typography>
+                        <Typography variant="h5" sx={{ mb: 4, color: ufo.amber, fontFamily: '"Audiowide", sans-serif', fontSize: '1.4rem' }}>
+                            Sala de Control
                         </Typography>
                         <form onSubmit={handleLogin}>
-                            <TextField
-                                fullWidth
-                                label="Identity"
-                                variant="outlined"
-                                sx={{ mb: 3 }}
-                                value={loginData.username}
-                                onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
-                            />
-                            <TextField
-                                fullWidth
-                                label="Cipher"
-                                type="password"
-                                variant="outlined"
-                                sx={{ mb: 4 }}
-                                value={loginData.password}
-                                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                            />
-                            <Button fullWidth variant="contained" type="submit" sx={{ bgcolor: '#ffd700', color: '#000', '&:hover': { bgcolor: '#ccae00' } }}>
-                                Authenticate
+                            <TextField fullWidth label="Identidad" sx={{ mb: 3 }} value={loginData.username}
+                                onChange={(e) => { setLoginData({ ...loginData, username: e.target.value }); setLoginError(false); }} />
+                            <TextField fullWidth label="Clave" type="password" sx={{ mb: loginError ? 1.5 : 4 }} value={loginData.password}
+                                onChange={(e) => { setLoginData({ ...loginData, password: e.target.value }); setLoginError(false); }} />
+                            {loginError && (
+                                <Typography sx={{ ...mono, color: ufo.coral, fontSize: '0.72rem', mb: 3 }}>
+                                    ⚠ Credenciales inválidas, buscador de la verdad.
+                                </Typography>
+                            )}
+                            <Button fullWidth variant="contained" type="submit" endIcon={<Radar size={18} />}>
+                                Autenticar
                             </Button>
                         </form>
+                        <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate('/')} sx={{ mt: 3, color: ufo.muted, fontSize: '0.7rem' }}>
+                            Volver al blog
+                        </Button>
                     </Paper>
                 </motion.div>
             </Box>
         );
     }
 
+    // ---------- DASHBOARD ----------
     return (
-        <Box sx={{ minHeight: '100vh', pt: '120px', pb: 10, bgcolor: '#050505' }}>
+        <Box sx={{ minHeight: '100vh', pt: { xs: '90px', md: '110px' }, pb: 10 }}>
+            <div className="crt-scanlines" />
             <Container maxWidth="lg">
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 6 }}>
-                    <Typography variant="h3" sx={{ color: '#ffd700', fontFamily: 'Cinzel' }}>
-                        Archives Control
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        <Button variant="outlined" startIcon={<Plus />} onClick={() => openEditor()} sx={{ borderColor: '#ffd700', color: '#ffd700' }}>
-                            New Record
-                        </Button>
-                        <Button variant="text" startIcon={<LogOut />} onClick={handleLogout} sx={{ color: 'rgba(255,255,255,0.5)' }}>
-                            Depart
-                        </Button>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'space-between', alignItems: 'center', mb: 5 }}>
+                    <Box>
+                        <Typography sx={{ ...mono, color: ufo.teal, fontSize: '0.7rem', mb: 0.5 }}>PANEL DE CONTROL · {posts.length} REGISTROS</Typography>
+                        <Typography variant="h4" sx={{ color: ufo.amber, fontFamily: '"Audiowide", sans-serif' }}>Archivo de Anomalías</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1.5 }}>
+                        <Button variant="contained" startIcon={<Plus size={18} />} onClick={() => openEditor()}>Nuevo registro</Button>
+                        <Button variant="text" startIcon={<Radio size={16} />} onClick={() => navigate('/')} sx={{ color: ufo.muted }}>Ver blog</Button>
+                        <Button variant="text" startIcon={<LogOut size={16} />} onClick={handleLogout} sx={{ color: ufo.muted }}>Salir</Button>
                     </Box>
                 </Box>
 
-                <Grid container spacing={4}>
-                    {posts.map((post) => (
-                        <Grid item xs={12} sm={6} md={4} key={post.id}>
-                            <Card sx={{ bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,215,0,0.1)' }}>
-                                <CardContent>
-                                    <Typography variant="h6" sx={{ color: '#ffd700', mb: 1 }}>{post.title}</Typography>
-                                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mb: 2 }}>{post.summary}</Typography>
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                                        <Tooltip title="Manage Signals">
-                                            <IconButton size="small" sx={{ color: '#ffd700' }} onClick={() => openComments(post.id)}>
-                                                <MessageSquare size={18} />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <IconButton size="small" sx={{ color: '#00ffaa' }} onClick={() => openEditor(post)}>
-                                            <Edit size={18} />
-                                        </IconButton>
-                                        <IconButton size="small" sx={{ color: '#ff4d00' }} onClick={() => handleDelete(post.id)}>
-                                            <Trash2 size={18} />
-                                        </IconButton>
+                {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress sx={{ color: ufo.amber }} /></Box>
+                ) : posts.length === 0 ? (
+                    <Paper sx={{ p: 6, textAlign: 'center', border: `1px dashed ${ufo.line}` }}>
+                        <Satellite />
+                        <Typography sx={{ color: ufo.muted, mb: 2 }}>No hay transmisiones archivadas todavía.</Typography>
+                        <Button variant="contained" startIcon={<Plus size={18} />} onClick={() => openEditor()}>Crear el primero</Button>
+                    </Paper>
+                ) : (
+                    <Grid container spacing={3}>
+                        {posts.map((post) => (
+                            <Grid item xs={12} sm={6} md={4} key={post.id}>
+                                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', transition: 'all .25s', '&:hover': { borderColor: ufo.amber, transform: 'translateY(-3px)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' } }}>
+                                    <Box sx={{ position: 'relative', height: 140, bgcolor: '#000' }}>
+                                        {post.main_image
+                                            ? <CardMedia component="img" height="140" image={post.main_image} alt={post.title} sx={{ opacity: 0.85 }} />
+                                            : <Box sx={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ImageIcon size={28} color={ufo.muted as string} /></Box>}
+                                        <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: 'rgba(10,12,19,0.8)', px: 1, py: 0.3, borderRadius: 1, border: `1px solid ${ufo.lineTeal}` }}>
+                                            <Eye size={13} color={ufo.teal} />
+                                            <Typography sx={{ ...mono, color: ufo.teal, fontSize: '0.65rem' }}>{post.views || 0}</Typography>
+                                        </Box>
                                     </Box>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    ))}
-                </Grid>
+                                    <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                        <Typography sx={{ ...mono, color: ufo.muted, fontSize: '0.62rem', mb: 0.5 }}>{new Date(post.created_at).toLocaleDateString()}</Typography>
+                                        <Typography sx={{ color: ufo.amber, fontFamily: '"Audiowide", sans-serif', fontSize: '0.95rem', lineHeight: 1.25, mb: 1 }}>{post.title}</Typography>
+                                        <Typography sx={{ color: ufo.muted, fontSize: '0.92rem', mb: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1 }}>{post.summary}</Typography>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${ufo.line}`, pt: 1 }}>
+                                            <Chip label={`${(post.tags || []).length} tags`} size="small" sx={{ bgcolor: 'rgba(53,224,208,0.08)', color: ufo.teal, border: `1px solid ${ufo.lineTeal}`, fontSize: '0.6rem', height: 20 }} />
+                                            <Box>
+                                                <Tooltip title="Comentarios"><IconButton size="small" sx={{ color: ufo.amber }} onClick={() => openComments(post.id)}><MessageSquare size={17} /></IconButton></Tooltip>
+                                                <Tooltip title="Editar"><IconButton size="small" sx={{ color: ufo.teal }} onClick={() => openEditor(post)}><Edit size={17} /></IconButton></Tooltip>
+                                                <Tooltip title="Borrar"><IconButton size="small" sx={{ color: ufo.coral }} onClick={() => handleDelete(post.id)}><Trash2 size={17} /></IconButton></Tooltip>
+                                            </Box>
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+                        ))}
+                    </Grid>
+                )}
             </Container>
 
-            {/* Editor Dialog */}
-            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="lg" fullWidth>
-                <DialogTitle sx={{ bgcolor: '#0a0a0b', color: '#ffd700', fontFamily: 'Cinzel', display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Languages size={24} /> {editingPost?.id ? 'Bilingual Decryption' : 'New Trans-Lingual Mystery'}
-                </DialogTitle>
-                <DialogContent sx={{ bgcolor: '#0a0a0b', pt: 2 }}>
-                    <Grid container spacing={4} sx={{ mt: 1 }}>
-                        {/* Common metadata */}
-                        <Grid item xs={12} md={8}>
-                            <TextField
-                                fullWidth
-                                label="Main Image URL"
-                                value={editingPost?.main_image || ''}
-                                onChange={(e) => setEditingPost({ ...editingPost, main_image: e.target.value })}
-                                InputProps={{ startAdornment: <ImageIcon size={20} style={{ marginRight: 8, opacity: 0.5 }} /> }}
-                                sx={{ mb: 2 }}
-                            />
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                            <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
-                                {editingPost?.tags?.map((tag) => (
-                                    <Chip
-                                        key={tag}
-                                        label={tag}
-                                        onDelete={() => setEditingPost({ ...editingPost, tags: editingPost.tags?.filter(t => t !== tag) })}
-                                        sx={{ bgcolor: 'rgba(0, 255, 170, 0.1)', color: '#00ffaa' }}
-                                    />
-                                ))}
-                            </Box>
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                                <TextField
-                                    size="small"
-                                    label="Add Tag"
-                                    value={newTag}
-                                    onChange={(e) => setNewTag(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && addTag()}
-                                />
-                                <Button onClick={addTag} variant="outlined">Add</Button>
-                            </Box>
-                        </Grid>
-
-                        <Grid item xs={12}><Divider sx={{ borderStyle: 'dashed', opacity: 0.2 }} /></Grid>
-
-                        {/* SPANISH SECTION */}
-                        <Grid item xs={12} md={6}>
-                            <Typography variant="overline" sx={{ color: '#ffd700', display: 'block', mb: 2 }}>Español (Principal)</Typography>
-                            <TextField
-                                fullWidth
-                                label="Título (ES)"
-                                value={editingPost?.title || ''}
-                                onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value })}
-                                sx={{ mb: 3 }}
-                            />
-                            <TextField
-                                fullWidth
-                                label="Resumen (ES)"
-                                multiline
-                                rows={2}
-                                value={editingPost?.summary || ''}
-                                onChange={(e) => setEditingPost({ ...editingPost, summary: e.target.value })}
-                                sx={{ mb: 3 }}
-                            />
-                            <TextField
-                                fullWidth
-                                label="Contenido (ES)"
-                                multiline
-                                rows={12}
-                                value={editingPost?.content || ''}
-                                onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
-                            />
-                        </Grid>
-
-                        {/* ENGLISH SECTION */}
-                        <Grid item xs={12} md={6}>
-                            <Typography variant="overline" sx={{ color: '#00D4FF', display: 'block', mb: 2 }}>English Version</Typography>
-                            <TextField
-                                fullWidth
-                                label="Title (EN)"
-                                value={editingPost?.title_en || ''}
-                                onChange={(e) => setEditingPost({ ...editingPost, title_en: e.target.value })}
-                                sx={{ mb: 3 }}
-                            />
-                            <TextField
-                                fullWidth
-                                label="Summary (EN)"
-                                multiline
-                                rows={2}
-                                value={editingPost?.summary_en || ''}
-                                onChange={(e) => setEditingPost({ ...editingPost, summary_en: e.target.value })}
-                                sx={{ mb: 3 }}
-                            />
-                            <TextField
-                                fullWidth
-                                label="Content (EN)"
-                                multiline
-                                rows={12}
-                                value={editingPost?.content_en || ''}
-                                onChange={(e) => setEditingPost({ ...editingPost, content_en: e.target.value })}
-                            />
-                        </Grid>
-
-                        {/* GALLERY IMAGES SECTION */}
-                        <Grid item xs={12}><Divider sx={{ borderStyle: 'dashed', opacity: 0.2 }} /></Grid>
-
-                        <Grid item xs={12}>
-                            <Typography variant="overline" sx={{ color: '#00ffaa', display: 'block', mb: 2 }}>
-                                📸 Galería True Crime (Imágenes Superpuestas)
+            {/* ---------- EDITOR ---------- */}
+            <Dialog open={openDialog} onClose={() => !saving && setOpenDialog(false)} maxWidth="lg" fullWidth
+                PaperProps={{ sx: { bgcolor: ufo.bg2, backgroundImage: 'none', border: `1px solid ${ufo.line}`, height: { xs: '100%', md: '92vh' }, m: { xs: 0, md: 2 } } }}
+                fullScreen={typeof window !== 'undefined' && window.innerWidth < 900}>
+                {/* Editor header */}
+                <Box sx={{ px: 3, py: 2, borderBottom: `1px solid ${ufo.line}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexShrink: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+                        <Radar size={22} color={ufo.amber} />
+                        <Box sx={{ minWidth: 0 }}>
+                            <Typography sx={{ ...mono, color: ufo.teal, fontSize: '0.62rem' }}>{editingPost?.id ? 'EDITANDO REGISTRO' : 'NUEVO REGISTRO'}</Typography>
+                            <Typography noWrap sx={{ color: ufo.amber, fontFamily: '"Audiowide", sans-serif', fontSize: '1rem' }}>
+                                {editingPost?.title || 'Sin título'}
                             </Typography>
+                        </Box>
+                    </Box>
+                    <IconButton onClick={() => setOpenDialog(false)} sx={{ color: ufo.muted }}><X size={20} /></IconButton>
+                </Box>
 
-                            <Box sx={{ mb: 3 }}>
-                                <input
-                                    accept="image/*"
-                                    style={{ display: 'none' }}
-                                    id="gallery-upload"
-                                    multiple
-                                    type="file"
-                                    onChange={handleImageUpload}
-                                />
-                                <label htmlFor="gallery-upload">
-                                    <Button
-                                        variant="outlined"
-                                        component="span"
-                                        disabled={uploadingImages}
-                                        startIcon={<ImageIcon />}
-                                        sx={{ borderColor: '#00ffaa', color: '#00ffaa' }}
-                                    >
-                                        {uploadingImages ? 'Subiendo...' : 'Subir Imágenes de Galería'}
+                <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto"
+                    sx={{ px: 2, borderBottom: `1px solid ${ufo.line}`, flexShrink: 0, '& .MuiTab-root': { ...mono, fontSize: '0.72rem', color: ufo.muted, minHeight: 48 }, '& .Mui-selected': { color: `${ufo.amber} !important` }, '& .MuiTabs-indicator': { bgcolor: ufo.amber } }}>
+                    <Tab label="① Español" />
+                    <Tab label="② English" />
+                    <Tab label="③ Portada · Galería · Tags" />
+                    <Tab label="④ Vista previa" />
+                </Tabs>
+
+                <DialogContent sx={{ p: { xs: 2, md: 4 }, flex: 1, overflowY: 'auto' }}>
+                    {/* --- TAB 0: Spanish --- */}
+                    {tab === 0 && (
+                        <Box>
+                            <TextField fullWidth label="Título" value={editingPost?.title || ''} onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value })} sx={{ mb: 3 }} />
+                            <TextField fullWidth label="Resumen (aparece en la lista)" multiline rows={2} value={editingPost?.summary || ''} onChange={(e) => setEditingPost({ ...editingPost, summary: e.target.value })} sx={{ mb: 3 }} />
+                            <TextField fullWidth label="Contenido" multiline rows={16} value={editingPost?.content || ''} onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
+                                helperText={`${wordCount(editingPost?.content)} palabras · los saltos de línea se respetan`} />
+                        </Box>
+                    )}
+
+                    {/* --- TAB 1: English --- */}
+                    {tab === 1 && (
+                        <Box>
+                            <Button startIcon={<Copy size={16} />} onClick={copyEsToEn} variant="outlined" sx={{ mb: 3, color: ufo.teal, borderColor: ufo.lineTeal }}>
+                                Copiar desde español
+                            </Button>
+                            <TextField fullWidth label="Title" value={editingPost?.title_en || ''} onChange={(e) => setEditingPost({ ...editingPost, title_en: e.target.value })} sx={{ mb: 3 }} />
+                            <TextField fullWidth label="Summary" multiline rows={2} value={editingPost?.summary_en || ''} onChange={(e) => setEditingPost({ ...editingPost, summary_en: e.target.value })} sx={{ mb: 3 }} />
+                            <TextField fullWidth label="Content" multiline rows={16} value={editingPost?.content_en || ''} onChange={(e) => setEditingPost({ ...editingPost, content_en: e.target.value })}
+                                helperText={`${wordCount(editingPost?.content_en)} words`} />
+                        </Box>
+                    )}
+
+                    {/* --- TAB 2: Media & tags --- */}
+                    {tab === 2 && (
+                        <Grid container spacing={4}>
+                            {/* Cover */}
+                            <Grid item xs={12} md={6}>
+                                <Typography sx={{ ...mono, color: ufo.amber, fontSize: '0.72rem', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}><ImageIcon size={15} /> PORTADA</Typography>
+                                <Box sx={{ width: '100%', height: 200, borderRadius: 1, border: `1px dashed ${ufo.line}`, mb: 2, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#000' }}>
+                                    {editingPost?.main_image
+                                        ? <img src={editingPost.main_image} alt="portada" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        : <Typography sx={{ color: ufo.muted, fontSize: '0.85rem' }}>Sin portada</Typography>}
+                                </Box>
+                                <input accept="image/*" style={{ display: 'none' }} id="cover-upload" type="file" onChange={handleCoverUpload} />
+                                <label htmlFor="cover-upload">
+                                    <Button component="span" variant="contained" fullWidth disabled={uploadingCover} startIcon={uploadingCover ? <CircularProgress size={16} /> : <UploadCloud size={18} />} sx={{ mb: 2 }}>
+                                        {uploadingCover ? 'Subiendo...' : 'Subir portada'}
                                     </Button>
                                 </label>
-                            </Box>
+                                <TextField fullWidth size="small" label="...o pega una URL" value={editingPost?.main_image || ''} onChange={(e) => setEditingPost({ ...editingPost, main_image: e.target.value })}
+                                    InputProps={{ startAdornment: <InputAdornment position="start"><LinkIcon size={15} /></InputAdornment> }} />
+                            </Grid>
 
-                            {/* Gallery Preview */}
-                            {editingPost?.gallery_images && editingPost.gallery_images.length > 0 && (
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                                    {editingPost.gallery_images.map((url, index) => (
-                                        <Box
-                                            key={index}
-                                            sx={{
-                                                position: 'relative',
-                                                width: 120,
-                                                height: 120,
-                                                borderRadius: 1,
-                                                overflow: 'hidden',
-                                                border: '2px solid rgba(0, 255, 170, 0.3)'
-                                            }}
-                                        >
-                                            <img
-                                                src={url}
-                                                alt={`Gallery ${index + 1}`}
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                            />
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => removeGalleryImage(index)}
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: 4,
-                                                    right: 4,
-                                                    bgcolor: 'rgba(0,0,0,0.7)',
-                                                    color: '#ff4d00',
-                                                    '&:hover': { bgcolor: 'rgba(0,0,0,0.9)' }
-                                                }}
-                                            >
-                                                <X size={16} />
-                                            </IconButton>
-                                        </Box>
+                            {/* Tags */}
+                            <Grid item xs={12} md={6}>
+                                <Typography sx={{ ...mono, color: ufo.amber, fontSize: '0.72rem', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}><TagIcon size={15} /> ETIQUETAS</Typography>
+                                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                                    <TextField size="small" fullWidth placeholder="ej. Avistamiento, Abducción..." value={newTag} onChange={(e) => setNewTag(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())} />
+                                    <Button onClick={addTag} variant="outlined">Añadir</Button>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', minHeight: 40 }}>
+                                    {(editingPost?.tags || []).length === 0 && <Typography sx={{ color: ufo.muted, fontSize: '0.85rem' }}>Aún sin etiquetas.</Typography>}
+                                    {editingPost?.tags?.map((t) => (
+                                        <Chip key={t} label={t} onDelete={() => setEditingPost({ ...editingPost, tags: editingPost.tags?.filter(x => x !== t) })}
+                                            sx={{ bgcolor: 'rgba(53,224,208,0.1)', color: ufo.teal, border: `1px solid ${ufo.lineTeal}` }} />
                                     ))}
                                 </Box>
-                            )}
+                            </Grid>
+
+                            <Grid item xs={12}><Divider sx={{ borderStyle: 'dashed', borderColor: ufo.line }} /></Grid>
+
+                            {/* Gallery */}
+                            <Grid item xs={12}>
+                                <Typography sx={{ ...mono, color: ufo.teal, fontSize: '0.72rem', mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <ImageIcon size={15} /> GALERÍA DE EVIDENCIA (hasta 5 se muestran como polaroids)
+                                </Typography>
+                                <input accept="image/*" style={{ display: 'none' }} id="gallery-upload" multiple type="file" onChange={handleGalleryUpload} />
+                                <label htmlFor="gallery-upload">
+                                    <Button component="span" variant="outlined" disabled={uploadingGallery} startIcon={uploadingGallery ? <CircularProgress size={16} /> : <UploadCloud size={18} />} sx={{ color: ufo.teal, borderColor: ufo.lineTeal, mb: 2 }}>
+                                        {uploadingGallery ? 'Subiendo...' : 'Subir imágenes'}
+                                    </Button>
+                                </label>
+                                {uploadingGallery && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: ufo.teal } }} />}
+                                {editingPost?.gallery_images && editingPost.gallery_images.length > 0 && (
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                                        {editingPost.gallery_images.map((url, i) => (
+                                            <Box key={i} sx={{ position: 'relative', width: 110, height: 110, borderRadius: 1, overflow: 'hidden', border: `1px solid ${ufo.lineTeal}` }}>
+                                                <img src={url} alt={`g${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                <IconButton size="small" onClick={() => removeGalleryImage(i)} sx={{ position: 'absolute', top: 3, right: 3, bgcolor: 'rgba(10,12,19,0.85)', color: ufo.coral, '&:hover': { bgcolor: 'rgba(10,12,19,0.95)' } }}>
+                                                    <X size={15} />
+                                                </IconButton>
+                                                {i < 5 && <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, textAlign: 'center', bgcolor: 'rgba(10,12,19,0.7)', ...mono, color: ufo.teal, fontSize: '0.55rem', py: 0.2 }}>#{i + 1}</Box>}
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                )}
+                            </Grid>
                         </Grid>
-                    </Grid>
+                    )}
+
+                    {/* --- TAB 3: Preview --- */}
+                    {tab === 3 && (
+                        <Box sx={{ maxWidth: 760, mx: 'auto' }}>
+                            <Typography sx={{ ...mono, color: ufo.teal, fontSize: '0.62rem', mb: 1 }}>CANAL · {new Date().toLocaleDateString()}</Typography>
+                            <Typography variant="h4" sx={{ fontFamily: '"Audiowide", sans-serif', color: ufo.amber, mb: 2, textShadow: '0 0 22px rgba(255,182,39,0.3)' }}>
+                                {editingPost?.title || 'Sin título'}
+                            </Typography>
+                            {editingPost?.main_image && (
+                                <Box sx={{ width: '100%', height: 300, borderRadius: 2, overflow: 'hidden', mb: 3, border: `1px solid ${ufo.line}` }}>
+                                    <img src={editingPost.main_image} alt="portada" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </Box>
+                            )}
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
+                                {editingPost?.tags?.map(t => <Chip key={t} label={t} size="small" sx={{ bgcolor: 'rgba(53,224,208,0.08)', color: ufo.teal, border: `1px solid ${ufo.lineTeal}` }} />)}
+                            </Box>
+                            <Typography sx={{ whiteSpace: 'pre-line', fontFamily: 'Rajdhani', fontSize: '1.15rem', lineHeight: 1.8, color: 'rgba(237,228,207,0.9)' }}>
+                                {editingPost?.content || 'El contenido aparecerá aquí...'}
+                            </Typography>
+                        </Box>
+                    )}
                 </DialogContent>
-                <DialogActions sx={{ bgcolor: '#0a0a0b', p: 3 }}>
-                    <Button onClick={() => setOpenDialog(false)} sx={{ color: 'rgba(255,255,255,0.5)' }}>Cancel</Button>
-                    <Button
-                        variant="contained"
-                        startIcon={<Save />}
-                        onClick={handleSavePost}
-                        sx={{ bgcolor: '#ffd700', color: '#000', '&:hover': { bgcolor: '#ccae00' } }}
-                    >
-                        Archive Record
-                    </Button>
-                </DialogActions>
+
+                {/* Sticky action bar */}
+                <Box sx={{ px: 3, py: 2, borderTop: `1px solid ${ufo.line}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexShrink: 0, bgcolor: ufo.bg }}>
+                    <Typography sx={{ ...mono, color: ufo.muted, fontSize: '0.65rem', display: { xs: 'none', sm: 'block' } }}>
+                        {editingPost?.title && editingPost?.content ? '✓ Listo para archivar' : '⚠ Requiere título y contenido (ES)'}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1.5, ml: 'auto' }}>
+                        <Button onClick={() => setOpenDialog(false)} sx={{ color: ufo.muted }}>Cancelar</Button>
+                        <Button variant="contained" startIcon={saving ? <CircularProgress size={16} /> : <Save size={18} />} onClick={handleSavePost} disabled={saving}>
+                            {saving ? 'Archivando...' : 'Archivar registro'}
+                        </Button>
+                    </Box>
+                </Box>
             </Dialog>
 
-            {/* Comments Dialog */}
-            <Dialog open={openCommentsDialog} onClose={() => setOpenCommentsDialog(false)} maxWidth="sm" fullWidth>
-                <DialogTitle sx={{ bgcolor: '#0a0a0b', color: '#ffd700', fontFamily: 'Cinzel', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <MessageSquare size={24} /> Transmission Logs
+            {/* ---------- COMMENTS ---------- */}
+            <Dialog open={openCommentsDialog} onClose={() => setOpenCommentsDialog(false)} maxWidth="sm" fullWidth
+                PaperProps={{ sx: { bgcolor: ufo.bg2, backgroundImage: 'none', border: `1px solid ${ufo.line}` } }}>
+                <Box sx={{ px: 3, py: 2, borderBottom: `1px solid ${ufo.line}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <MessageSquare size={20} color={ufo.amber} />
+                        <Typography sx={{ color: ufo.amber, fontFamily: '"Audiowide", sans-serif', fontSize: '1rem' }}>Registro de transmisiones</Typography>
                     </Box>
-                    <IconButton onClick={() => setOpenCommentsDialog(false)} sx={{ color: 'rgba(255,255,255,0.5)' }}>
-                        <X size={20} />
-                    </IconButton>
-                </DialogTitle>
-                <DialogContent sx={{ bgcolor: '#0a0a0b', minHeight: '300px' }}>
+                    <IconButton onClick={() => setOpenCommentsDialog(false)} sx={{ color: ufo.muted }}><X size={20} /></IconButton>
+                </Box>
+                <DialogContent sx={{ minHeight: 260 }}>
                     {selectedPostComments.length === 0 ? (
-                        <Box sx={{ display: 'flex', height: '200px', alignItems: 'center', justifyContent: 'center', opacity: 0.3 }}>
-                            <Typography variant="body1">No signals intercepted for this record.</Typography>
+                        <Box sx={{ display: 'flex', height: 200, alignItems: 'center', justifyContent: 'center', opacity: 0.4 }}>
+                            <Typography sx={mono}>Sin señales interceptadas.</Typography>
                         </Box>
                     ) : (
                         <List>
-                            {selectedPostComments.map((comment) => (
-                                <React.Fragment key={comment.id}>
+                            {selectedPostComments.map((c) => (
+                                <React.Fragment key={c.id}>
                                     <ListItem alignItems="flex-start" sx={{ px: 0, py: 2 }}>
-                                        <Box sx={{ mr: 2, mt: 0.5 }}>
-                                            <User size={20} color="#ffd700" opacity={0.5} />
-                                        </Box>
+                                        <Box sx={{ mr: 2, mt: 0.5 }}><User size={20} color={ufo.amber} /></Box>
                                         <ListItemText
-                                            primary={
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <Typography variant="subtitle2" sx={{ color: '#ffd700', fontWeight: 700 }}>
-                                                        {comment.username}
-                                                    </Typography>
-                                                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)' }}>
-                                                        {new Date(comment.created_at).toLocaleDateString()}
-                                                    </Typography>
-                                                </Box>
-                                            }
-                                            secondary={
-                                                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mt: 0.5 }}>
-                                                    {comment.content}
-                                                </Typography>
-                                            }
+                                            primary={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography sx={{ color: ufo.amber, fontWeight: 700, ...mono, fontSize: '0.85rem' }}>{c.username}</Typography>
+                                                <Typography variant="caption" sx={{ color: ufo.muted }}>{new Date(c.created_at).toLocaleDateString()}</Typography>
+                                            </Box>}
+                                            secondary={<Typography sx={{ color: 'rgba(237,228,207,0.75)', mt: 0.5, fontFamily: 'Rajdhani', fontSize: '1.05rem' }}>{c.content}</Typography>}
                                         />
                                         <ListItemSecondaryAction>
-                                            <IconButton edge="end" size="small" sx={{ color: '#ff4d00', opacity: 0.5, '&:hover': { opacity: 1 } }} onClick={() => handleDeleteComment(comment.id)}>
-                                                <Trash2 size={16} />
-                                            </IconButton>
+                                            <IconButton edge="end" size="small" sx={{ color: ufo.coral, opacity: 0.6, '&:hover': { opacity: 1 } }} onClick={() => handleDeleteComment(c.id)}><Trash2 size={16} /></IconButton>
                                         </ListItemSecondaryAction>
                                     </ListItem>
-                                    <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
+                                    <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />
                                 </React.Fragment>
                             ))}
                         </List>
@@ -549,5 +479,8 @@ const Admin: React.FC = () => {
         </Box>
     );
 };
+
+// small inline icon used in empty-state
+const Satellite = () => <Radar size={40} color={ufo.muted as string} style={{ marginBottom: 12 }} />;
 
 export default Admin;

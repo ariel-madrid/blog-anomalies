@@ -4,7 +4,7 @@ const Background: React.FC = () => {
     const [stars, setStars] = useState<{ id: number; top: string; left: string; size: string; duration: string }[]>([]);
 
     useEffect(() => {
-        const starCount = 150;
+        const starCount = 160;
         const newStars = Array.from({ length: starCount }).map((_, i) => ({
             id: i,
             top: `${Math.random() * 100}%`,
@@ -31,26 +31,22 @@ const Background: React.FC = () => {
                     }}
                 />
             ))}
+
+            {/* Retro concentric "radar sweep" horizon */}
             <div
                 style={{
                     position: 'absolute',
-                    top: '20%',
-                    right: '10%',
-                    width: '300px',
-                    height: '300px',
-                    background: 'radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%)',
-                    filter: 'blur(50px)',
-                }}
-            />
-            <div
-                style={{
-                    position: 'absolute',
-                    bottom: '10%',
-                    left: '5%',
-                    width: '400px',
-                    height: '400px',
-                    background: 'radial-gradient(circle, rgba(255, 77, 0, 0.05) 0%, transparent 70%)',
-                    filter: 'blur(60px)',
+                    bottom: '-45vw',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '110vw',
+                    height: '110vw',
+                    borderRadius: '50%',
+                    background:
+                        'repeating-radial-gradient(circle, rgba(53,224,208,0.05) 0px, rgba(53,224,208,0.05) 1px, transparent 1px, transparent 60px)',
+                    maskImage: 'radial-gradient(circle, #000 55%, transparent 72%)',
+                    WebkitMaskImage: 'radial-gradient(circle, #000 55%, transparent 72%)',
+                    opacity: 0.7,
                 }}
             />
         </div>

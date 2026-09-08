@@ -1,0 +1,13 @@
+# Secrets / local environment
+.env
+.env.local
+
+# Logs
+*.log
+.vite-dev.log
+
+# Vite cache
+node_modules/.vite/
+
+# OS
+.DS_Store
