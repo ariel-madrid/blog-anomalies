@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ufo } from '../theme';
+import ImageCropper from '../components/ImageCropper';
 
 const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || 'admin';
 const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS || 'pass';
@@ -35,6 +36,13 @@ const Admin: React.FC = () => {
     const [uploadingGallery, setUploadingGallery] = useState(false);
     const [uploadingCover, setUploadingCover] = useState(false);
     const [saving, setSaving] = useState(false);
+
+    // Image cropper
+    const [cropOpen, setCropOpen] = useState(false);
+    const [cropSrc, setCropSrc] = useState<string | null>(null);
+    const [cropAspect, setCropAspect] = useState(16 / 9);
+    const [cropTarget, setCropTarget] = useState<'cover' | 'gallery'>('cover');
+    const [cropQueue, setCropQueue] = useState<File[]>([]);
 
     // Comments
     const [openCommentsDialog, setOpenCommentsDialog] = useState(false);
@@ -136,39 +144,66 @@ const Admin: React.FC = () => {
         }
     };
 
-    // Generic uploader → returns public URLs
-    const uploadFiles = async (files: FileList): Promise<string[]> => {
-        const urls: string[] = [];
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const ext = file.name.split('.').pop();
-            const path = `blog-gallery/${Math.random().toString(36).substring(2)}-${Date.now()}.${ext}`;
-            const { error } = await supabase.storage.from('blog-images').upload(path, file);
-            if (error) { alert(`Error subiendo ${file.name}: ${error.message}`); continue; }
-            const { data: { publicUrl } } = supabase.storage.from('blog-images').getPublicUrl(path);
-            urls.push(publicUrl);
+    // Upload a single blob → public URL
+    const uploadOne = async (blob: Blob): Promise<string | null> => {
+        const path = `blog-gallery/${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
+        const { error } = await supabase.storage.from('blog-images').upload(path, blob, { contentType: 'image/jpeg' });
+        if (error) { alert(`Error subiendo imagen: ${error.message}`); return null; }
+        const { data: { publicUrl } } = supabase.storage.from('blog-images').getPublicUrl(path);
+        return publicUrl;
+    };
+
+    // Open the cropper for a file (queue = remaining gallery files to process next)
+    const startCrop = (file: File, target: 'cover' | 'gallery', queue: File[] = []) => {
+        setCropSrc(URL.createObjectURL(file));
+        setCropTarget(target);
+        setCropAspect(target === 'cover' ? 16 / 9 : 3 / 4);
+        setCropQueue(queue);
+        setCropOpen(true);
+    };
+
+    const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (files && files[0]) startCrop(files[0], 'cover');
+        e.target.value = '';
+    };
+
+    const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        const arr = Array.from(files);
+        startCrop(arr[0], 'gallery', arr.slice(1));
+        e.target.value = '';
+    };
+
+    const closeCropper = () => {
+        if (cropSrc) URL.revokeObjectURL(cropSrc);
+        setCropSrc(null);
+        setCropOpen(false);
+        setCropQueue([]);
+    };
+
+    // Receives the cropped blob, uploads it, then advances the gallery queue if any
+    const onCropped = async (blob: Blob) => {
+        const target = cropTarget;
+        if (cropSrc) URL.revokeObjectURL(cropSrc);
+        target === 'cover' ? setUploadingCover(true) : setUploadingGallery(true);
+        const url = await uploadOne(blob);
+        if (url) {
+            if (target === 'cover') setEditingPost(p => ({ ...p, main_image: url }));
+            else setEditingPost(p => ({ ...p, gallery_images: [...(p?.gallery_images || []), url] }));
         }
-        return urls;
-    };
+        target === 'cover' ? setUploadingCover(false) : setUploadingGallery(false);
 
-    const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
-        setUploadingGallery(true);
-        const urls = await uploadFiles(files);
-        setEditingPost(p => ({ ...p, gallery_images: [...(p?.gallery_images || []), ...urls] }));
-        setUploadingGallery(false);
-        e.target.value = '';
-    };
-
-    const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
-        setUploadingCover(true);
-        const urls = await uploadFiles(files);
-        if (urls[0]) setEditingPost(p => ({ ...p, main_image: urls[0] }));
-        setUploadingCover(false);
-        e.target.value = '';
+        if (target === 'gallery' && cropQueue.length > 0) {
+            const [next, ...rest] = cropQueue;
+            setCropSrc(URL.createObjectURL(next));
+            setCropQueue(rest);
+        } else {
+            setCropSrc(null);
+            setCropOpen(false);
+            setCropQueue([]);
+        }
     };
 
     const removeGalleryImage = (index: number) => {
@@ -476,6 +511,16 @@ const Admin: React.FC = () => {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* ---------- IMAGE CROPPER ---------- */}
+            <ImageCropper
+                open={cropOpen}
+                src={cropSrc}
+                aspect={cropAspect}
+                label={cropTarget === 'cover' ? 'Encuadra la portada' : 'Encuadra la imagen'}
+                onCancel={closeCropper}
+                onCropped={onCropped}
+            />
         </Box>
     );
 };
