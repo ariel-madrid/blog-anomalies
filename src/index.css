@@ -71,6 +71,16 @@ body {
   background-size: 100% 3px, 3px 100%;
 }
 
+/* ---------- CRT vignette (darkened edges, curved-tube feel) ---------- */
+.crt-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, transparent 52%, rgba(0, 0, 0, 0.30) 82%, rgba(0, 0, 0, 0.6) 100%);
+}
+
 /* ---------- Halftone dot texture (atomic-age print) ---------- */
 .halftone {
   background-image: radial-gradient(rgba(255, 182, 39, 0.14) 1px, transparent 1px);

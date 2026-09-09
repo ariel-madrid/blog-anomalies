@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Container, Typography, Card, CardContent, CardMedia, Chip, IconButton, Skeleton, useMediaQuery, useTheme, Button, TextField, Divider, Grid } from '@mui/material';
+import { Box, Container, Typography, Card, IconButton, Skeleton, useMediaQuery, useTheme, Button, TextField, Divider, Grid } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, BlogPost, BlogComment } from '../lib/supabase';
 import { Radio, Eye, Satellite, ArrowLeft, MessageSquare, Send, User, Share2, Radar } from 'lucide-react';
@@ -113,6 +113,19 @@ const AlienGrey = ({ size = 150 }: { size?: number }) => {
                 <path d="M64 106 Q72 111 80 106" stroke={greyDark} strokeWidth="2" fill="none" strokeLinecap="round" />
             </svg>
         </motion.div>
+    );
+};
+
+// Retro HUD corner brackets for panels
+const Corners = ({ color = ufo.amber, opacity = 0.5, inset = 8 }: { color?: string; opacity?: number; inset?: number }) => {
+    const base = { position: 'absolute' as const, width: 14, height: 14, zIndex: 3, pointerEvents: 'none' as const, opacity };
+    return (
+        <>
+            <Box sx={{ ...base, top: inset, left: inset, borderTop: `2px solid ${color}`, borderLeft: `2px solid ${color}` }} />
+            <Box sx={{ ...base, top: inset, right: inset, borderTop: `2px solid ${color}`, borderRight: `2px solid ${color}` }} />
+            <Box sx={{ ...base, bottom: inset, left: inset, borderBottom: `2px solid ${color}`, borderLeft: `2px solid ${color}` }} />
+            <Box sx={{ ...base, bottom: inset, right: inset, borderBottom: `2px solid ${color}`, borderRight: `2px solid ${color}` }} />
+        </>
     );
 };
 
@@ -289,8 +302,9 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost }) => {
                 </IconButton>
             </Box>
 
-            {/* CRT scanlines */}
+            {/* CRT scanlines + vignette */}
             <div className="crt-scanlines" />
+            <div className="crt-vignette" />
 
             {/* Fleet of saucers */}
             <Saucer top="8%" size={95} />
@@ -314,6 +328,7 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost }) => {
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     justifyContent: { xs: 'flex-start', md: 'center' }, pt: { xs: 4, md: 0 },
                 }}>
+                    <Corners color={ufo.amber} opacity={0.45} inset={10} />
                     {/* horizon grid */}
                     <Box sx={{
                         position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%',
@@ -391,7 +406,7 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost }) => {
                     {/* LEFT: post list */}
                     <Box sx={{
                         display: { xs: showContentOnMobile ? 'none' : 'block', md: 'block' },
-                        flex: { xs: '1', md: '0 0 340px' }, overflowY: { xs: 'visible', md: 'auto' }, pr: { xs: 0, md: 1.5 },
+                        flex: { xs: '1', md: '0 0 280px' }, overflowY: { xs: 'visible', md: 'auto' }, pr: { xs: 0, md: 1.5 },
                     }}>
                         <Typography sx={{ ...monoLabel, color: ufo.amber, fontSize: '0.7rem', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Satellite size={14} /> {lang === 'ES' ? 'FRECUENCIAS DETECTADAS' : 'DETECTED FREQUENCIES'} [{posts.length}]
@@ -406,47 +421,50 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost }) => {
                                 {lang === 'ES' ? 'Sin transmisiones aún. Vuelve pronto.' : 'No transmissions yet. Check back soon.'}
                             </Typography>
                         ) : (
-                            posts.map((post) => {
+                            posts.map((post, i) => {
                                 const active = selectedPost?.id === post.id;
                                 return (
-                                    <motion.div key={post.id} whileHover={{ x: 5 }} onClick={() => handlePostSelect(post)}>
+                                    <motion.div key={post.id} whileHover={{ x: 4 }} onClick={() => handlePostSelect(post)}>
                                         <Card sx={{
-                                            mb: 2, cursor: 'pointer', borderRadius: 1, overflow: 'hidden',
+                                            display: 'flex', alignItems: 'stretch', mb: 1.25, cursor: 'pointer', borderRadius: 1, overflow: 'hidden', minHeight: 74,
                                             background: active ? 'rgba(255,182,39,0.08)' : 'rgba(16,20,31,0.7)',
                                             border: `1px solid ${active ? ufo.amber : ufo.line}`,
-                                            borderLeft: `4px solid ${active ? ufo.amber : 'transparent'}`,
-                                            backdropFilter: 'blur(12px)', transition: 'all 0.3s ease',
-                                            boxShadow: active ? '0 0 22px rgba(255,182,39,0.35)' : '0 2px 10px rgba(0,0,0,0.3)',
-                                            '&:hover': { borderLeftColor: ufo.teal, boxShadow: '0 8px 22px rgba(53,224,208,0.22)' },
+                                            borderLeft: `3px solid ${active ? ufo.amber : 'transparent'}`,
+                                            backdropFilter: 'blur(12px)', transition: 'all 0.25s ease',
+                                            boxShadow: active ? '0 0 18px rgba(255,182,39,0.3)' : 'none',
+                                            '&:hover': { borderLeftColor: ufo.teal, boxShadow: '0 6px 16px rgba(53,224,208,0.18)' },
                                         }}>
-                                            {post.main_image && (
-                                                <CardMedia component="img" height="110" image={post.main_image}
-                                                    alt={lang === 'EN' ? post.title_en : post.title}
-                                                    sx={{ opacity: active ? 1 : 0.6, transition: 'opacity 0.3s', filter: 'saturate(1.1) contrast(1.05)' }} />
-                                            )}
-                                            <CardContent sx={{ p: 2 }}>
-                                                <Typography sx={{ color: ufo.amber, fontFamily: '"Audiowide", sans-serif', fontSize: '0.95rem', lineHeight: 1.25, mb: 1 }}>
-                                                    {lang === 'EN' ? post.title_en || post.title : post.title}
-                                                </Typography>
+                                            {/* thumbnail */}
+                                            <Box sx={{
+                                                width: 70, flexShrink: 0, position: 'relative',
+                                                backgroundImage: post.main_image ? `url(${post.main_image})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center',
+                                                bgcolor: '#05070a', opacity: active ? 1 : 0.78,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                borderRight: `1px solid ${ufo.line}`,
+                                            }}>
+                                                {!post.main_image && <Satellite size={18} color={ufo.muted as string} />}
+                                            </Box>
+                                            {/* body */}
+                                            <Box sx={{ flex: 1, minWidth: 0, px: 1.25, py: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.4 }}>
+                                                    <Typography sx={{ ...monoLabel, color: ufo.teal, fontSize: '0.55rem' }}>EXP-{String(i + 1).padStart(3, '0')}</Typography>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
+                                                        <Eye size={12} color={ufo.teal} />
+                                                        <Typography sx={{ ...monoLabel, color: ufo.teal, fontSize: '0.58rem' }}>{post.views || 0}</Typography>
+                                                    </Box>
+                                                </Box>
                                                 <Typography sx={{
-                                                    color: ufo.muted, mb: 1.5, fontSize: '0.95rem',
+                                                    color: active ? ufo.amber : ufo.cream, fontFamily: '"Audiowide", sans-serif', fontSize: '0.72rem', lineHeight: 1.2,
                                                     display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                                                 }}>
-                                                    {lang === 'EN' ? post.summary_en || post.summary : post.summary}
+                                                    {lang === 'EN' ? post.title_en || post.title : post.title}
                                                 </Typography>
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                    {(post.tags || []).slice(0, 3).map(tag => (
-                                                        <Chip key={tag} label={tag} size="small" sx={{
-                                                            bgcolor: 'rgba(53,224,208,0.08)', color: ufo.teal,
-                                                            border: `1px solid ${ufo.lineTeal}`, fontSize: '0.62rem', height: 20,
-                                                        }} />
-                                                    ))}
-                                                </Box>
-                                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mt: 1, gap: 0.5 }}>
-                                                    <Eye size={15} color={ufo.teal} />
-                                                    <Typography variant="caption" sx={{ ...monoLabel, color: ufo.teal, fontSize: '0.7rem' }}>{post.views || 0}</Typography>
-                                                </Box>
-                                            </CardContent>
+                                                {(post.tags || []).length > 0 && (
+                                                    <Typography noWrap sx={{ ...monoLabel, color: ufo.muted, fontSize: '0.55rem', mt: 0.4 }}>
+                                                        {(post.tags || []).slice(0, 3).join(' · ')}
+                                                    </Typography>
+                                                )}
+                                            </Box>
                                         </Card>
                                     </motion.div>
                                 );
@@ -479,9 +497,19 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost }) => {
                                                 ▸ {(selectedPost.author || 'ANÓNIMO').toUpperCase()}
                                             </Typography>
                                         </Box>
-                                        <IconButton size="small" sx={{ color: ufo.teal, border: `1px solid ${ufo.lineTeal}`, borderRadius: 1 }} onClick={handleShare} title="Compartir">
-                                            <Share2 size={18} />
-                                        </IconButton>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7, px: 1, py: 0.3, border: `1px solid ${ufo.coral}`, borderRadius: 0.5 }}>
+                                                <motion.span
+                                                    animate={{ opacity: [1, 0.15, 1] }}
+                                                    transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                                                    style={{ width: 7, height: 7, borderRadius: '50%', background: ufo.coral, display: 'inline-block' }}
+                                                />
+                                                <Typography sx={{ ...monoLabel, color: ufo.coral, fontSize: '0.58rem' }}>LIVE</Typography>
+                                            </Box>
+                                            <IconButton size="small" sx={{ color: ufo.teal, border: `1px solid ${ufo.lineTeal}`, borderRadius: 1 }} onClick={handleShare} title="Compartir">
+                                                <Share2 size={18} />
+                                            </IconButton>
+                                        </Box>
                                     </Box>
 
                                     {/* Main image */}
