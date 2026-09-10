@@ -27,6 +27,34 @@ const SaucerSVG = ({ size = 90 }: { size?: number }) => (
     </svg>
 );
 
+// Cow silhouette (for abductions)
+const Cow = ({ size = 46 }: { size?: number }) => (
+    <svg width={size} height={size * 0.62} viewBox="0 0 80 50" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
+        <ellipse cx="38" cy="26" rx="24" ry="12" fill="#0b0f16" />
+        <rect x="16" y="32" width="4" height="13" rx="2" fill="#0b0f16" />
+        <rect x="26" y="33" width="4" height="13" rx="2" fill="#0b0f16" />
+        <rect x="48" y="33" width="4" height="13" rx="2" fill="#0b0f16" />
+        <rect x="58" y="32" width="4" height="13" rx="2" fill="#0b0f16" />
+        <ellipse cx="64" cy="18" rx="10" ry="8" fill="#0b0f16" />
+        <path d="M58 12 l-3 -6 M70 12 l3 -6" stroke="#0b0f16" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M14 22 q-6 3 -4 12" stroke="#0b0f16" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+        <ellipse cx="34" cy="24" rx="6" ry="4" fill="#182230" />
+        <ellipse cx="46" cy="28" rx="4" ry="3" fill="#182230" />
+        <circle cx="66" cy="18" r="2" fill={ufo.teal} opacity="0.7" />
+    </svg>
+);
+
+// Cow being sucked up the tractor beam
+const AbductedCow = ({ left, delay = 0, dur = 7, size = 46 }: { left: string; delay?: number; dur?: number; size?: number }) => (
+    <motion.div
+        animate={{ y: [20, -180], opacity: [0, 1, 1, 0], rotate: [-12, 10, -8, 12] }}
+        transition={{ duration: dur, repeat: Infinity, ease: 'easeInOut', delay, times: [0, 0.12, 0.82, 1] }}
+        style={{ position: 'absolute', left, bottom: 8, zIndex: 2, filter: 'drop-shadow(0 0 7px rgba(53,224,208,0.65))', pointerEvents: 'none' }}
+    >
+        <Cow size={size} />
+    </motion.div>
+);
+
 // Saucer that drifts back and forth across the sky
 const Saucer = ({ delay = 0, top = '12%', size = 90 }: { delay?: number; top?: string; size?: number }) => (
     <motion.div
@@ -316,65 +344,80 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost }) => {
             <OrbitingSaucer top="45%" left="55%" radius={230} size={40} duration={38} reverse opacity={0.22} />
 
             <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1, pb: 12 }}>
-                {/* HERO / COVER */}
+                {/* HERO / COVER — abduction scene */}
                 <Box className="halftone" sx={{
-                    position: 'relative', width: '100%', height: { xs: '300px', md: '380px' },
+                    position: 'relative', width: '100%', height: { xs: '360px', md: '460px' },
                     mb: { xs: 4, md: 6 }, borderRadius: 2, overflow: 'hidden',
                     border: `1px solid ${ufo.line}`, boxShadow: '0 0 50px rgba(0,0,0,0.7)',
                     background: `
-                        radial-gradient(ellipse at 50% 120%, rgba(53,224,208,0.18) 0%, transparent 55%),
-                        radial-gradient(ellipse at 50% 30%, rgba(255,182,39,0.12) 0%, transparent 60%),
+                        radial-gradient(ellipse at 50% 120%, rgba(53,224,208,0.16) 0%, transparent 55%),
+                        radial-gradient(ellipse at 50% 12%, rgba(53,224,208,0.14) 0%, transparent 45%),
                         linear-gradient(180deg, #0d1120 0%, #0A0C13 100%)`,
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    justifyContent: { xs: 'flex-start', md: 'center' }, pt: { xs: 4, md: 0 },
+                    justifyContent: 'flex-end', pb: { xs: 3, md: 5 },
                 }}>
                     <Corners color={ufo.amber} opacity={0.45} inset={10} />
+
                     {/* horizon grid */}
                     <Box sx={{
-                        position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%',
+                        position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%',
                         background: `repeating-linear-gradient(90deg, transparent 0 38px, rgba(53,224,208,0.10) 38px 39px),
                                      repeating-linear-gradient(0deg, transparent 0 38px, rgba(53,224,208,0.10) 38px 39px)`,
-                        transform: 'perspective(300px) rotateX(60deg)', transformOrigin: 'bottom', opacity: 0.6, pointerEvents: 'none',
+                        transform: 'perspective(300px) rotateX(60deg)', transformOrigin: 'bottom', opacity: 0.55, pointerEvents: 'none',
                     }} />
-                    {/* Rotating radar sweep */}
+
+                    {/* Tractor beam */}
                     <motion.div
-                        animate={{ rotate: [0, 360] }}
-                        transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+                        animate={{ opacity: [0.55, 0.85, 0.55] }}
+                        transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
                         style={{
-                            position: 'absolute', top: '50%', left: '50%', width: '160%', height: '260%',
-                            transform: 'translate(-50%,-50%)',
-                            background: 'conic-gradient(from 0deg, rgba(53,224,208,0.16), transparent 25%, transparent 100%)',
-                            pointerEvents: 'none', opacity: 0.6,
+                            position: 'absolute', top: isMobile ? 78 : 118, bottom: 0, left: '50%', transform: 'translateX(-50%)',
+                            width: isMobile ? 210 : 320, zIndex: 1, pointerEvents: 'none',
+                            background: 'linear-gradient(180deg, rgba(53,224,208,0.45) 0%, rgba(53,224,208,0.14) 55%, rgba(53,224,208,0) 100%)',
+                            clipPath: 'polygon(40% 0, 60% 0, 100% 100%, 0% 100%)',
+                            filter: 'blur(3px)',
                         }}
                     />
-                    {/* Retro starburst behind title */}
+                    {/* beam bright core */}
                     <Box sx={{
-                        position: 'absolute', top: '50%', left: '50%', width: 520, height: 520, transform: 'translate(-50%,-50%)',
-                        background: 'repeating-conic-gradient(from 0deg, rgba(255,182,39,0.06) 0deg 6deg, transparent 6deg 12deg)',
-                        borderRadius: '50%', maskImage: 'radial-gradient(circle, #000 30%, transparent 62%)',
-                        WebkitMaskImage: 'radial-gradient(circle, #000 30%, transparent 62%)', pointerEvents: 'none',
+                        position: 'absolute', top: isMobile ? 82 : 122, bottom: 0, left: '50%', transform: 'translateX(-50%)',
+                        width: isMobile ? 90 : 130, zIndex: 1, pointerEvents: 'none',
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(53,224,208,0.08) 60%, transparent 100%)',
+                        clipPath: 'polygon(42% 0, 58% 0, 90% 100%, 10% 100%)', filter: 'blur(4px)',
                     }} />
-                    <motion.div
-                        animate={{ opacity: [0.35, 0.6, 0.35] }}
-                        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-                        style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 35%, rgba(53,224,208,0.16), transparent 70%)', pointerEvents: 'none' }}
-                    />
-                    <Typography sx={{ ...monoLabel, color: ufo.teal, fontSize: { xs: '0.6rem', md: '0.75rem' }, mb: 1, zIndex: 1 }}>
+
+                    {/* Abducted cows */}
+                    <AbductedCow left="calc(50% - 55px)" delay={0} dur={7} size={isMobile ? 34 : 48} />
+                    <AbductedCow left="calc(50% + 10px)" delay={2.6} dur={8} size={isMobile ? 28 : 40} />
+                    <AbductedCow left="calc(50% - 12px)" delay={4.8} dur={6.5} size={isMobile ? 24 : 34} />
+
+                    {/* Big mothership */}
+                    <Box sx={{ position: 'absolute', top: { xs: 8, md: 14 }, left: '50%', transform: 'translateX(-50%)', zIndex: 3, filter: 'drop-shadow(0 10px 26px rgba(53,224,208,0.55))' }}>
+                        <motion.div
+                            animate={{ y: [0, -8, 0], x: [-7, 7, -7] }}
+                            transition={{ y: { duration: 4, repeat: Infinity, ease: 'easeInOut' }, x: { duration: 10, repeat: Infinity, ease: 'easeInOut' } }}
+                        >
+                            <SaucerSVG size={isMobile ? 150 : 240} />
+                        </motion.div>
+                    </Box>
+
+                    {/* Title block (lit by the beam) */}
+                    <Typography sx={{ ...monoLabel, color: ufo.teal, fontSize: { xs: '0.58rem', md: '0.75rem' }, mb: 1, zIndex: 4 }}>
                         {t.channel} 01 · {lang === 'ES' ? 'ARCHIVO DE ANOMALÍAS' : 'ANOMALY ARCHIVE'}
                     </Typography>
                     <Typography component="h1" className="neon-sign" sx={{
-                        fontSize: { xs: '2rem', sm: '3.2rem', md: '4.4rem' }, lineHeight: 1, textAlign: 'center', px: 2, zIndex: 1,
+                        fontSize: { xs: '1.9rem', sm: '3.2rem', md: '4.4rem' }, lineHeight: 1, textAlign: 'center', px: 2, zIndex: 4,
                     }}>
                         The Anomaly Index
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5, zIndex: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5, zIndex: 4 }}>
                         <Box sx={{ width: 40, height: 1, background: ufo.amber, opacity: 0.5 }} />
                         <Radar size={16} color={ufo.amber} />
                         <Box sx={{ width: 40, height: 1, background: ufo.amber, opacity: 0.5 }} />
                     </Box>
 
-                    {/* Waving grey alien */}
-                    <Box sx={{ position: 'absolute', right: { xs: 4, md: 28 }, bottom: 0, zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                    {/* Waving grey alien (pilot peeking, corner) */}
+                    <Box sx={{ position: 'absolute', right: { xs: 2, md: 24 }, bottom: 0, zIndex: 4, display: { xs: 'none', sm: 'flex' }, flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
                         <motion.div
                             animate={{ opacity: [0, 1, 1, 0], scale: [0.8, 1, 1, 0.8] }}
                             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', times: [0, 0.15, 0.85, 1] }}
@@ -389,8 +432,8 @@ const Blog: React.FC<BlogProps> = ({ selectedPost: externalPost }) => {
                                 {lang === 'ES' ? '¡HOLA, TERRÍCOLA!' : 'GREETINGS, EARTHLING!'}
                             </Box>
                         </motion.div>
-                        <Box sx={{ width: { xs: 84, md: 130 } }}>
-                            <AlienGrey size={isMobile ? 84 : 130} />
+                        <Box sx={{ width: { xs: 84, md: 110 } }}>
+                            <AlienGrey size={isMobile ? 84 : 110} />
                         </Box>
                     </Box>
                 </Box>
